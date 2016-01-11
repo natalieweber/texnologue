@@ -1,0 +1,927 @@
+%!TEX encoding = UTF-8 Unicode
+
+%%% The macrology of James A. Crippen <jcrippen@gmail.com>.
+%%%
+%%% Public domain. No warranty. If it breaks you get to keep both pieces.
+%%%
+%%% I am not a TeX wizard, merely a LaTeXnician. My code may offend your
+%%% sensibilities, but I welcome constructive criticism if working code is
+%%% included.
+
+\ProvidesExplPackage{crippenmacros}{2015/12/16}{3.6}{James A. Crippen's macrology}
+
+%% History.
+%%
+%% 2014/04/07 1.6
+%%   Added colour support to the \gm gloss emphasis macro.
+%% 2014/04/20 1.7
+%%   Added \nd{}{} command for TikZ nodes in examples.
+%% 2014/05/27 1.8
+%%   Added \tinyskip, \mspan, and \mlspan for layered model representations.
+%%   Also added \lyname for representing layer and column names.
+%% 2014/07/28 1.9
+%%   Converted \fm{} to use LaTeX3 xparse. It now also handles stigmata and
+%%   suppressed hyphenation, distinguishing \fm*{...} from \fm[*]{...}
+%% 2014/09/12 2.0
+%%   Added \tikzexsetup and \tikzexstylesetup for TikZ arrows in examples.
+%%   Also removed suffix package because it is obsoleted by xparse utilities.
+%%   Updated a bunch of simple newcommands to ProvideDocumentCommand.
+%% 2014/10/02 2.1
+%%   Modified \gm{} to support background shading and added toggle for bold.
+%% 2014/10/16 2.2
+%%   Changed \ProvidesPackage to \ProvidesExplPackage.
+%% 2014/12/04 2.3
+%%   Added \rtlap macro for hanging root symbols.
+%% 2015/01/16 2.4
+%%   Changed \orth to use Unicode characters instead of \textlangle and
+%%   \textrangle.
+%% 2015/02/11 2.5
+%%   Added new classifier macro \clx from WSCLA talk with RMD.
+%% 2015/03/06 2.6
+%%   Small changes to \clx.
+%% 2015/03/22 2.7
+%%   Added \exrlap and \exllap for aligning between multiple examples.
+%% 2015/04/18 2.8
+%%   Changed \* to use \llap and added corresponding \?.
+%% 2015/05/06 2.9
+%%   Modified \clx to handle empty args.
+%% 2015/05/11 3.0
+%%   Changed \vv, \nn, \cc to use \texorpdfstring and Unicode fallback.
+%% 2015/05/13 3.1
+%%   Updated exarrows to use new TikZ 3.0 arrows.meta library.
+%% 2015/09/21 3.2
+%%   Adjusted exarrows TikZ syntax.
+%% 2015/11/18 3.3
+%%   Added optional valency argument for \rt.
+%% 2015/11/20 3.4
+%%   Fixed dumb \unspace placement bug in \rt.
+%% 2015/12/13 3.5
+%%   Added centering \clap counterpart to \llap and \rlap.
+%% 2015/12/16 3.6
+%%   Added \sv for semantic variables in text, and incluided \smop.
+
+%% Only tested with XeLaTeX.
+%% There is Unicode (UTF-8) text in this file, both in the comments and in
+%% the code. YHBW.
+\RequireXeTeX
+
+%% FIXME: Add more appropriate \RequirePackage stuff here. There are lots of
+%% assumptions about other packages herein.
+
+%% The new LaTeX3 generic document command parser.
+%%
+%% FIXME: Convert all \newcommands below to the \ProvideDocumentCommand format.
+\RequirePackage{xparse}
+%% The new xparse package doesn’t have something built in to test if
+%% something is either -NoValue- or just empty, but it’s easy enough to
+%% implement, so here we go.
+%%
+%% FIXME: Detect if this is defined elsewhere, in case someone else
+%% implements this obvious function.
+\ExplSyntaxOn
+\DeclareExpandableDocumentCommand \IfNoValueOrEmptyTF {mmm}
+ 	{\IfNoValueTF{#1}{#2}
+		{\tl_if_empty:nTF {#1} {#2} {#3}}}
+\ExplSyntaxOff
+
+%% Need this for the classifier macros.
+%%
+%% FIXME: Change to using xparse utilties and expl3 syntax.
+\RequirePackage{ifthen}
+
+%% Colour support is required for the \gm macro.
+\RequirePackage{xcolor}
+
+%% Tonnes of LaTeX programming goodies.
+\RequirePackage{etoolbox}
+
+%% We don’t actually require TikZ because it’s a big package. The author
+%% is required to do so if they want to use TikZ macros in here.
+%%\RequirePackage{tikz}
+
+%% A box with zero height and zero width.
+%%
+%% This is especially useful in trees where some stuff in a node shouldn’t be
+%% included in the calculation of the central point of the node. Subscripts are
+%% a prime example. It can also be useful in tables for the same purpose.
+%%
+%% FIXME: Reimplement in plain TeX.
+\ProvideDocumentCommand \fakebox {O{l} m}
+	{\raisebox{0pt}[\height][0pt]{\makebox[0pt][#1]{#2}}}
+
+%% Hanging ungrammatical marker.
+%%
+%% This obliterates the original TeX macro of \* which is a diacritic that
+%% is pointless in the context of Unicode.
+%%
+%% FIXME: Is math mode a problem?
+\renewcommand*{\*}{\llap{*}}
+
+%% Hanging questionable marker.
+%%
+%% This obliterates the original TeX macro of \? which is ¿ that
+%% is pointless in the context of Unicode.
+\ProvideDocumentCommand \? {} {\llap{?}}
+
+%% Slashed zero for the nul or zero symbol.
+%%
+%% This bagbiting cruft is font dependent because most fonts have a circle
+%% and line for their null set rather than a slashed zero. Why? Because Unicode
+%% doesn’t specify a unique slashed zero character. The distinction is
+%% supposedly a ‘presentation form’ issue according to the punctilious
+%% mathematicians that know better than The Rest of Us. The OpenType
+%% specification gives a [zero] feature but that only turns on slashed zero
+%% for regular zero. Font designers have, to date, not included an alternate
+%% form of the circular null set, despite my repeated suggestions.
+%%
+%% The \texorpdfstring macro from hyperref should convert the printed
+%% form (some flavour of U+0030 Digit Zero) into the real null symbol
+%% character (U+2205 Empty Set) for the PDF text stream that is given
+%% with cut-and-paste and in PDF bookmarks. The first argument of
+%% the \texorpdfstring macro is the visual representation, the second is
+%% the text stream representation. Put that in your presentation forms
+%% pipe and smoke it.
+%%
+%% If you ask me “Can’t you just use U+0030 and U+0338 Combining
+%% Long Solidus Overlay?” then I will curse your name unto the ends of
+%% the Earth.
+%%
+%% If \zerofont is undefined then we just hope for the best and use U+2205.
+\@ifundefined{zerofont}%
+	{\ProvideDocumentCommand \nul { } {∅}}
+	%% Else \texorpdfstring is defined by the hyperref package. If not,
+	%% then we just define \nul without it.
+	{\@ifundefined{texorpdfstring}%
+		% Just do the \zerofont.
+		{\ProvideDocumentCommand \nul { } {{\zerofont 0}}}
+		% Use \texorpdfstring.
+		% FIXME: Using \ProvideDocumentCommand doesn’t work here. Why?
+		{\newcommand{\nul}{\texorpdfstring{{\zerofont 0}}{∅}}}}
+
+%% Swap 0 for \nul, to be used in assorted macros.
+%% This of course expects \nul to be defined.
+%%
+%% FIXME: Not smart.
+\ProvideDocumentCommand \nulswitch { m }%
+	% If given 0 or ∅
+	{\ifthenelse{\equal{#1}{0}\OR\equal{#1}{∅}}%
+		% Then say \nul.
+		{\nul}
+		% Else if given \gm{0} or \gm{∅}
+		{\ifthenelse{\equal{#1}{\gm{0}}\OR\equal{#1}{\gm{∅}}}%
+			% Then say \gm{\nul}
+			{\gm{\nul}}%
+			% Else whatever was given.
+			{#1}}}
+
+%% Swap various horizontal dashes for the minus sign.
+%%
+%% FIXME: Should be able to do this with a list instead of all the \ORs.
+%% FIXME: Use LaTeX3 here instead.
+\ProvideDocumentCommand \minusswitch { m }
+	{\ifthenelse
+			% U+002D Hyphen-Minus
+			{\equal{#1}{-}
+			% U+2010 Hyphen
+			\OR\equal{#1}{‐}
+			% U+2012 Figure Dash
+			\OR\equal{#1}{‒}
+			% U+2013 En Dash
+			\OR\equal{#1}{–}
+			% U+2014 Em Dash
+			\OR\equal{#1}{—}
+			% U+2015 Horizontal Bar
+			\OR\equal{#1}{―}}
+		% U+2212 Minus Sign
+		{−}
+		% Else whatever was given.
+		{#1}}
+
+%% Gloss abbreviations.
+%%
+%% NOTE: Requires document authors to define \glossfont usefully.
+%%
+%% \xx{} is used for abbreviations in text, \zz{} is used for abbreviations in
+%% glosses. The latter uses a condensed font so that it takes up less space.
+%%
+%% Screw people who don’t like two letter macros. These are mine and I don’t
+%% care one whit about your namespace.
+%%
+%% FIXME: Detect lack of \glossfont and print a warning.
+%% FIXME: Detect lack of \scshape and print a warning. This is much harder.
+\ProvideDocumentCommand \xx { m } {\textsc{#1}}
+\ProvideDocumentCommand \zz { m } {{\glossfont\textsc{#1}}}
+
+%% Gloss emphasis.
+%%
+%% Though some authors use underlining to emphasize elements in glosses,
+%% this is a bad idea for Tlingit because of the underscore diacritic (U+0330).
+%% I use bolding instead. Optional colouration and background shading can
+%% also be turned on and adjusted to taste. Colour uses the xcolor package.
+%%
+%% This uses LaTeX3 code.
+\ExplSyntaxOn
+%% A boolean to toggle bolding on and off.
+\bool_new:c {gmboldbool}
+%% A boolean to toggle colour on and off.
+\bool_new:c {gmcolorbool}
+%% A boolean to toggle background colour on and off.
+\bool_new:c {gmbgcolorbool}
+%% The toggle commands.
+\ProvideDocumentCommand \gmboldon { } {\bool_set_true:c {gmboldbool}}
+\ProvideDocumentCommand \gmboldoff { } {\bool_set_false:c {gmboldbool}}
+\ProvideDocumentCommand \gmcoloron { } {\bool_set_true:c {gmcolorbool}}
+\ProvideDocumentCommand \gmcoloroff { } {\bool_set_false:c {gmcolorbool}}
+\ProvideDocumentCommand \gmbgcoloron { } {\bool_set_true:c {gmbgcolorbool}}
+\ProvideDocumentCommand \gmbgcoloroff { } {\bool_set_false:c {gmbgcolorbool}}
+%% The colours.
+%% FIXME: Expand to allow different xcolor's other colour models, e.g. CMYK.
+\providecolor{gmcolor}{rgb}{0.66,0,0}
+\providecolor{gmbgcolor}{rgb}{0.95,0.95,0.95}
+%% Command to change the colours.
+%% The \definecolor macro overwrites the current value with a new one.
+\ProvideDocumentCommand \gmcolorset { m } {\definecolor{gmcolor}{rgb}{#1}}
+\ProvideDocumentCommand \gmbgcolorset { m } {\definecolor{gmbgcolor}{rgb}{#1}}
+%% A strut with 90 percent of normal height and width for the colorbox.
+%% See http://tex.stackexchange.com/questions/74459/remove-space-before-colorbox
+\ProvideDocumentCommand \gm@smallstrut {}
+	{\vrule width 0pt height 0.9\ht\strutbox depth 0.9\dp\strutbox\relax}
+%%
+%% The guts.
+%%
+\ProvideDocumentCommand \gm@bold { m }
+	{\bool_if:cTF {gmboldbool}
+		{\textbf{#1}}
+		{#1}}
+\ProvideDocumentCommand \gm@color { m }
+	{\bool_if:cTF {gmcolorbool}
+		{\textcolor{gmcolor}{#1}}
+		{#1}}
+\ProvideDocumentCommand \gm@bgcolor { m }
+	{\bool_if:cTF {gmbgcolorbool}
+		% A colorbox has a frame built into it which we set to
+		% zero using \setlength inside a group for scope.
+		{\begingroup
+		\setlength{\fboxsep}{0pt}%
+		\colorbox{gmbgcolor}{\gm@smallstrut{}#1}%
+		\endgroup}
+		{#1}}
+%%
+%% The actual gloss emphasis command \gm.
+%%
+%% NOTE: I’m not sure if the order of operations matters or not. IWFM.
+\ProvideDocumentCommand \gm { m }
+	{\gm@bgcolor{\gm@color{\gm@bold{#1}}}}
+%% Back to normal LaTeX2e.
+\ExplSyntaxOff
+
+%%%
+%%% Classifiers.
+%%%
+
+%% Spaces for the classifier macros below.
+%%
+%% FIXME: Calculate from the font’s geometries.
+\newlength{\clspacelength}
+\setlength{\clspacelength}{0.125ex}
+\ProvideDocumentCommand \clspace { } {\hspace{\clspacelength}}
+\newlength{\clbkspacelength}
+\setlength{\clbkspacelength}{-0.125ex}
+\ProvideDocumentCommand \clbkspace { } {\hspace{\clbkspacelength}}
+\newlength{\clsnuglength}
+\setlength{\clsnuglength}{-0.0625ex}
+\ProvideDocumentCommand \clsnug { } {\hspace{\clsnuglength}}
+
+%% Bolded classifier D or I components, calls \minusswitch defined above.
+%%
+%% This allows one to say things like \cl{\gm{+}}{s}{+} so that the D
+%% component is bolded with the \gm{...} gloss emphasis macro.
+%%
+%% Yes, this is a kluge.
+%%
+%% FIXME: Should parse out the \gm{...} bit and then use \minusswitch.
+\ProvideDocumentCommand \clemph { m m }
+	{\ifthenelse
+			% U+002D Hyphen-Minus
+			{\equal{#1}{\gm{-}}
+			% U+2010 Hyphen
+			\OR\equal{#1}{\gm{‐}}
+			% U+2012 Figure Dash
+			\OR\equal{#1}{\gm{‒}}
+			% U+2013 En Dash
+			\OR\equal{#1}{\gm{–}}
+			% U+2014 Em Dash
+			\OR\equal{#1}{\gm{—}}
+			% U+2015 Horizontal Bar
+			\OR\equal{#1}{\gm{―}}}
+		{\gm{−#2}}
+		{\ifthenelse{\equal{#1}{\gm{+}}}
+			{\gm{+#2}}
+			{\minusswitch{#1}#2}}}
+
+%% Tlingit classifier macro.
+%%
+%%  arg 1: star
+%%  arg 2: D component
+%%  arg 3: S component
+%%  arg 4: I component
+%%
+%% Ex: \cl{+}{s}{+} → \zz{cl}[\zz{+d}, s, \zz{+i}]
+%%   but with some extra formatting.
+%%
+%% If supplied with a star then this macro will switch to a formatting
+%% style suitable for body text rather than in an example. This entails
+%% less spacing spacing adjustments and the use of \xx{} rather than
+%% \zz{} for the D and I components, and the default font rather than
+%% \glossfont for the S component.
+%%
+%% This macro calls \clemph and \nulswitch in an attempt to do the
+%% right thing when seeing 0 or an emphasized element with \gm{...}.
+%%
+%% FIXME: Should be a better way than overusing \IfBooleanTF.
+\ProvideDocumentCommand \cl { s m m m } {%
+	% Print the classifier abbreviation.
+	\IfBooleanTF{#1}{\xx}{\zz}{cl}%
+	% Print the opening bracket.
+	\IfBooleanTF{#1}{}{\clbkspace}[%
+	% Print the D component.
+	\IfBooleanTF{#1}{\xx}{\zz}{%
+		\IfBooleanTF{#1}{}{\clbkspace}%
+		\clemph{#2}{d}}%
+	% Print comma and space.
+	,\IfBooleanTF{#1}{\space}{\clspace}%
+	% Print the S component.
+	{\IfBooleanTF{#1}{}{\glossfont}%
+		\nulswitch{#3}%
+	}%
+	% Print comma and space.
+	,\IfBooleanTF{#1}{\space}{\clspace}%
+	% Print the I component.
+	{\IfBooleanTF{#1}{\xx}{\zz}{%
+		\clemph{#4}{i}}}%
+	% Print the closing bracket.
+	\IfBooleanTF{#1}{]}{\clsnug]\clsnug}}
+
+%% Classifier macro for verb theme definitions, only specifies ±D and S.
+%% The mnemonic is 'short cl'. This can also be used for Athabaskan
+%% languages since they lack [±I].
+%% 
+%% This is in an mbox to prevent line breaking inside of it.
+%%
+%% Arguments are as above.
+\ProvideDocumentCommand \scl { s m m } {\mbox{%
+	% Print the classifier abbreviation.
+	\IfBooleanTF{#1}{}{\xx{cl}\clbkspace}%
+	% Print the opening bracket.
+	[%
+	% Print the D component.
+	\clbkspace\xx{\clemph{#2}{d}}%
+	% Print comma and space.
+	,\clspace{}%
+	% Print the S component.
+	\nulswitch{#3}%
+	% Print the closing bracket.
+	]%
+	}}
+
+%% A new Tlingit classifier macro.
+%%
+%% We have to keep the old one around for historical reasons,
+%% but this is a slightly better replacement. It doesn’t need to
+%% care about negation because we use privative features now.
+%%
+%% FIXME: Rework this so it can handle the old binary features
+%%  too by detecting the presence of {-,–,—,−}. Then rework
+%%  the \clf macro below to be similarly compatible.
+%%
+%% Classifier abbreviation.
+\ProvideDocumentCommand \clabbrev {} {cl}
+%% Small capitals formatting macro.
+\ProvideDocumentCommand \clscf { m } {\zz{#1}}
+%% Main macro for Tlingit classifier representation.
+%%
+%%   arg 1: star - supress classifier label
+%%   arg 2: optional space command
+%%   arg 2: optional classifier label command
+%%   arg 3: optional feature formatting command
+%%   arg 4: D-component
+%%   arg 5: S-component
+%%   arg 6: I-component
+\ProvideDocumentCommand \clx { s o o m m m } {%
+	% Print the classifier abbreviation. The star suppresses it.
+	\IfBooleanTF{#1}{}
+		{\IfValueTF{#2}
+			{#2{\clabbrev}}
+			{\clscf{\clabbrev}}\clbkspace}%
+	% First print the opening bracket.
+	[\clsnug%
+	% Skip the D-component if empty
+	\IfNoValueOrEmptyTF{#4}{}
+		% otherwise print D-component
+		% with arg 3 as a formatter if it exists.
+		{\IfValueTF{#3}{#3{#4}}{#4}}%
+	% Skip the S-component if empty, or else
+	\IfNoValueOrEmptyTF{#5}{}
+		% first print comma and space if D nonempty
+		{\IfNoValueOrEmptyTF{#4}{}{,\clspace}%
+		% and then print S-component
+		% with arg three as a formatter if it exists.
+		\IfValueTF{#3}{#3{#5}}{#5}}%
+	% Skip the I-component if empty
+	\IfNoValueOrEmptyTF{#6}{}
+		% otherwise if S-component is empty
+		{\IfNoValueOrEmptyTF{#5}
+			% then if D-component is also empty do nothing
+			{\IfNoValueOrEmptyTF{#4}{}
+				% otherwise (nonempty D) print comma and space
+				{,\clspace}}
+			% or else (nonempty S) print comma and space
+			{,\clspace}%
+		% and then print I-component
+		% with arg three as a formatter if it exists.
+		\IfValueTF{#3}{#3{#6}}{#6}}%
+	% And finally print the closing bracket.
+	\clsnug]\clsnug}
+
+%% Macro for representing single classifier features.
+%%
+%%  arg 1: star; gives \xx{cl} before open bracket if used
+%%  arg 2: optional; minus or plus for a binary feature
+%%  arg 3: mandatory; feature name
+%%
+%% Uses \clemph to be reasonable about \gm{...} for emphasizing things.
+%% If arg 2 is given with \gm{...} in it then the whole feature within brackets
+%% will be wrapped in \gm{...}, including arg 3. Arg 2 uses \minusswitch to
+%% convert - to –, and arg 3 uses \nulswitch to convert 0 to \nul.
+\ProvideDocumentCommand \clf { s o m } {%
+	\mbox{%
+		\IfBooleanTF{#1}{\xx{cl}}{}%
+		[%
+		\IfValueTF{#2}%
+			{\xx{\clemph{#2}{#3}}}
+			{\nulswitch{#3}}%
+		]}}
+
+%%%
+%%% Verb themes.
+%%%
+
+%% Basic formatting for the verb theme morpheme string.
+\ProvideDocumentCommand \thm { m } {\emph{#1}}
+
+%% Skip an element in a verb theme if it is given as a star or is empty.
+\ProvideDocumentCommand \thmargignore { m m } {%
+	\ifthenelse{\equal{#1}{*} \OR \equal{#1}{}}%
+		{}% no op
+		{#2}}
+
+%% Verb themes and definitions for running text.
+%%  arg 1: morpheme string
+%%  (ephemera:
+%%    arg 2: conjugation prefix
+%%    arg 3: imperfective stem variation suffix
+%%    arg 4: imperfective type)
+%%  arg 5: translation
+\ProvideDocumentCommand \vthm { s m m m m m } {%
+	% The verb theme morpheme string.
+	\thm{#2} %
+	% The verb theme ephemera.
+	(\thmargignore{#3}{\textit{\nulswitch{#3}}; }%
+		\thmargignore{#4}{\textit{-#4} }%
+		\thmargignore{#5}{#5})%
+	% The verb theme translation.
+	\thmargignore{#6}{ ‘#6’}}
+
+%%%
+%%% Example macros.
+%%%
+
+%% These are all designed for use with ExPex 4.0 or later.
+%% ExPex 4.0 was the first version available on CTAN.
+
+%% Example comments.
+\ProvideDocumentCommand \excmt { m } {\textit{#1}}
+
+%% Verb themes and definitions in examples.
+%%  arg 1: morpheme string
+%%  (ephemera:
+%%    arg 2: conjugation prefix
+%%    arg 3: imperfective stem variation suffix
+%%    arg 4: imperfective type)
+%%  arg 5: translation
+%%
+%% This is meant to be used in ExPex examples inside of a \begingl ... \endgl
+%% pair. It should occur in the following context:
+%%   \begingl
+%%   	...
+%%   	\glft ...
+%%   		\exthm{}{}{}{}{}
+%%   		\exthm{}{}{}{}{}...
+%%   		\trailingcitation{...}
+%%   		//
+%%   \endgl
+%% The \trailingcitation can precede the \exthm, but both must follow the
+%% actual gloss and must be followed by the ExPex end-of-line //.
+\ProvideDocumentCommand \exthmfnt {} {\small}
+\newlength{\exthmspclength}
+\setlength{\exthmspclength}{0.5ex}
+\ProvideDocumentCommand \exthmspc {} {\hspace{\exthmspclength}}
+\ProvideDocumentCommand \exthmlabel {} {theme}
+\ProvideDocumentCommand \exthm { m m m m m } {%
+	\par\addtolength{\leftskip}{1em}\exthmfnt{}%
+		\exthmlabel{}:\hspace{1ex}\thm{#1}\exthmspc{}%
+		(\thmargignore{#2}{\textit{\nulswitch{#2}};\exthmspc{}}%
+		 \thmargignore{#3}{\textit{-#3}\exthmspc{}}%
+		 \thmargignore{#4}{#4}%
+		)\thmargignore{#5}{\exthmspc{}‘#5’}}
+
+%% Right and left overlap macros for aligning between examples.
+%%
+%% These use \phantom to define a blank space of fixed width, on
+%% top of which some text is printed from the right or left side.
+%% They are meant to make things align vertically between multiple
+%% examples. One uses \rlap to make text overlap the blank from
+%% the right edge, the other uses \llap to overlap from the left edge.
+%%
+%%    \pex
+%%    \a This is a \exrlap{short}{very lengthy} example.
+%%    \a This is a \exrlap{longer}{very lengthy} example.
+%%    \a This is a very lengthy example.
+%%    \xe
+%%
+%%  arg 1: text to print
+%%  arg 2: text for width
+\ProvideDocumentCommand \exrlap { m m } {\rlap{#1}\phantom{#2}}
+\ProvideDocumentCommand \exllap { m m } {\phantom{#2}\llap{#1}}
+
+%%%
+%%% TikZ macrology.
+%%%
+
+%% If TikZ isn't loaded then these macros will fail. But if these macros
+%% aren't used, then it won't matter if TikZ is loaded or not.
+
+%% Nodes for TikZ arrows in examples.
+%%  arg 1: star; if present then omit \strut at beginning of node content
+%%  arg 2: node label
+%%  arg 3: node content
+%%
+%% NOTE: This tries to be smart, using \tikzifinpicture to determine whether
+%%  a \tikz should be emitted, or not if we're already inside a tikzpicture
+%%  environment. But \tikzifinpicture is not recursive-safe, so there is some
+%%  undocumented unreliability with it. Anyway, it works in simple cases, so
+%%  that you can use \nd{}{} inside of an ordinary tikzpicture environment.
+\ProvideDocumentCommand \nd { s m m } {%
+	\tikzifinpicture{}{\tikz}\node(#2){\IfBooleanTF{#1}{}{\strut}#3};}
+
+%% Generic setup for TikZ arrows in examples.
+%%
+%% This has to be called inside of the \ex or or \a and before \nd is called.
+%% It adds to the {every picture} style, so if called outside of a scope like
+%% \ex then it will apply in every TikZ picture. So don't do that.
+\ProvideDocumentCommand \tikzexsetup { } {%
+	\tikzstyle{every picture}+=[remember picture, inner sep=0pt, baseline, anchor=base]}
+
+%% Style definition for TikZ arrows in examples.
+\ProvideDocumentCommand \tikzexstylesetup { } {%
+	\usetikzlibrary{arrows.meta}%
+	\tikzset{exarrows/.style={semithick,
+		arrows = {-Stealth[scale=1, scale length=1, scale width=1]}}}}
+
+%%%
+%%% Tables.
+%%%
+
+%% Table labelling macrology.
+%%
+%% NOTE: Requires document authors to define \condensed usefully.
+%% FIXME: Define \condensed if it doesn’t already exist, otherwise warn.
+%%
+%% Simple labels.
+\ProvideDocumentCommand \tlbl {m} {{\condensed\itshape #1}}
+\ProvideDocumentCommand \tlbld {m} {{\condensed\bfseries #1}}
+%% Sideways labels.
+\usepackage{rotating}
+\ProvideDocumentCommand \tlbls {m} {%
+	\begin{sideways}{\condensed\itshape #1}\end{sideways}}
+\ProvideDocumentCommand \tlblcs {m} {%
+	\begin{sideways}{\condensed #1}\end{sideways}}
+\ProvideDocumentCommand \tlbds {m} {%
+	\begin{sideways}{\condensed\bfseries #1}\end{sideways}}
+
+%% A leading command for tables where a horizontal rule is not appropriate.
+%% \noalign ignores table alignment so you don’t get empty row errors.
+%%
+%% FIXME: Memoir has a table spacing command, try it instead.
+\newcommand*{\tableleading}{\noalign{\vspace{1.5ex}}}
+\newcommand*{\smalltableleading}{\noalign{\vspace{0.75ex}}}
+\newcommand*{\thintableleading}{\noalign{\vspace{0.125ex}}}
+
+%%%
+%%% Layered model representations.
+%%%
+
+%% This provides support for tables used in my layered representation
+%% of morphology. The tables are plain TeX tables rather than LaTeX
+%% tables, so they use the basic \halign and \multispan macros.
+%%
+%% Because the tables are plain TeX, these macros are also plain TeX. 
+%%
+%% FIXME: The LaTeX error messages have never been tested.
+
+%% Example (using ExPex for \ex...\xe):
+%% 
+%% \ex\label{ex:layered-boring-english}\vtop{\offinterlineskip\halign{%
+%% \strut\tlbl{#}\quad\hfil&\hfil#\hfil\quad~&&\hfil#\hfil\quad~\cr
+%% root		& commod	&		&		& 		& \cr
+%% make		&		& -ify		&		&		& \cr
+%% pertain		&		&		& -ic		&		& \cr
+%% act			&		&		&		& -ate		& \cr
+%% result		&		&		&		&		& -tion \cr
+%% \noalign{\tinyskip\hrule\tinyskip}
+%% linear		& commod	& -ify		& -ic		& -ate		& -tion \cr
+%% \noalign{\tinyskip}
+%% \omit		&		&\mlspan{2}			&\mlspan{2}\cr
+%% \noalign{\tinyskip}
+%% spellout		&		&\mspan{2}{ific}		&\mspan{2}{ation}\cr
+%% \noalign{\tinyskip}
+%% \omit		&\mlspan{5}\cr
+%% \noalign{\tinyskip}
+%% 			&\mspan{5}{commodification}\cr
+%% 			&\mspan{5}{‘commercially valuing the valueless’}\cr
+%% }}\trailingcitation{\parencite[81]{bauer:2001}}
+%% \xe
+
+%% A skip that is smaller than \smallskip.
+\ifx\tinyskip\undefined%
+  \def\tinyskip{\vskip 2pt plus 1pt}%
+\else
+  \PackageError{crippenmacros}{%
+    The macro \protect\tinyskip\protect is already defined
+  }{%
+    There is no help for you.\MessageBreak
+    \space \space Try typing \space <return>
+    \space to proceed, ignoring \protect\tinyskip.
+  }
+\fi
+
+%% A \multispan shortcut that includes centering \hfil.
+\ifx\mspan\undefined%
+  \def\mspan#1#2{\multispan{#1}{\hfil{}#2\hfil}}%
+\else
+  \PackageError{crippenmacros}{%
+    The macro \protect\mspan\protect is already defined
+  }{%
+    There is no help for you.\MessageBreak
+    \space \space Try typing \space <return>
+    \space to proceed, ignoring \protect\mspan.
+  }
+\fi
+
+%% A multispan shortcut that produces \hrule leaders.
+\ifx\mlspan\undefined%
+  \def\mlspan#1{\multispan{#1}{\leaders\hrule\hfil~}}%
+\else
+  \PackageError{crippenmacros}{%
+    The macro \protect\mlspan\protect is already defined
+  }{%
+    There is no help for you.\MessageBreak
+    \space \space Try typing \space <return>
+    \space to proceed, ignoring \protect\mlspan.
+  }
+\fi
+
+%% A centering counterpart to \llap and \rlap.
+%% See Perlis (2001), “A complement to \smash, \llap, and \rlap”,
+%%   TUGboat 22.4: 350–352.
+\ifx\clap\undefined%
+  \def\clap#1{\hbox to 0pt{\hss#1\hss}}
+\else
+  \PackageError{crippenmacros}{%
+    The macro \protect\clap\protect is already defined
+  }{%
+    There is no help for you.\MessageBreak
+    \space \space Try typing \space <return>
+    \space to proceed, ignoring \protect\mlspan.
+  }
+\fi
+
+%% Layer names.
+%%
+%% This is an ordinary LaTeX macro. It is meant for referencing
+%% the name of a layer or column in running text. Redefine
+%% this for your formatting preferences.
+\ProvideDocumentCommand \lyname { m } {‘\textit{#1}’}
+
+%%%
+%%% Miscellany.
+%%%
+
+%% Roots.
+%%
+%% The root symbol (U+221A Square Root) in many fonts is taller than
+%% the usual cap or ascender height. This \raisebox hack sticks the
+%% root into a zero-height box so that it doesn’t cause an increase
+%% in leading. Since this symbol often has an excessively large right
+%% sidebearing for our purposes because of the angle of the ascender,
+%% the negative horizontal space in \rtkern kerns the following
+%% letters a bit more closely.
+%%
+%% The optional argument is meant for a superscript number like ² that
+%% indicates the valency of the root. The superscript is rlapped so
+%% that it appears above the vee of the root symbol. Since this never
+%% works properly, a \raisebox moves the superscript around to get in
+%% the right spot. This can be configured using the \rtsuplift length.
+%% The \raisebox for the superscript has zero height and depth so it
+%% doesn't screw up other spacing.
+\newlength{\rtkern}
+\setlength{\rtkern}{-0.0625ex}
+\newlength{\rtsuplift}
+\setlength{\rtsuplift}{0.66ex}
+\ProvideDocumentCommand \rt { o m } {%
+	\IfNoValueOrEmptyTF{#1}{}%
+	{\raisebox{\rtsuplift}[0pt][0pt]{\rlap{\unspace#1\unspace}}}%
+	\raisebox{0pt}[0pt][0pt]{√}\hspace*{\rtkern}#2}
+%% This command allows the root to hang on the left side. It
+%% is meant for column labels where the root symbol otherwise
+%% visually misaligns the column label with the rest of the column.
+%% Note that the \rt{} command still applies \rtkern despite \llap.
+\ProvideDocumentCommand \rtlap { m } {\llap{\rt{}}#1}
+
+%% Small spaces.
+%%
+%% These override the builtin ones which are only defined for math mode and
+%% which I don't use.
+\renewcommand*{\!}{\nolinebreak\hspace{0.2ex}}
+\renewcommand*{\:}{\nolinebreak\hspace{-0.2ex}}
+
+%% Italicized linguistic forms appearing in text.
+%%
+%% The \fm@cmd command does the underlying formatting.
+%% This just calls LaTeX \emph which does the right thing, but it can be replaced.
+\ProvideDocumentCommand \fm@cmd { m } {\emph{#1}}
+%% The \fm command is the user interface.
+%%
+%%  arg 1: star; wraps everything in an mbox to prevent line breaking
+%%    hyphenation can get ugly especially for suffixes
+%%  arg 2: stigma; optional argument to appear before the form
+%%    this can be a star since it is always a square bracket argument
+%%  arg 3: body of linguistic form
+\ProvideDocumentCommand \fm { s O{} m } {%
+	\IfBooleanTF{#1}%
+		{\mbox{#2\fm@cmd{#3}}}
+		{#2\nobreak\fm@cmd{#3}}}
+
+%% Sans-serif linguistic forms appearing in text.
+%%
+%% This is useful for semantics, where a metalanguage name may be sans-serif.
+%% The \sm@cmd command is the underlying formatting.
+\ProvideDocumentCommand \sm@cmd { m } {\textsf{#1}}
+%% The \sm command has an optional star to prevent hyphenation via
+%% an \mbox, just like \fm above.
+\ProvideDocumentCommand \sm { s m } {%
+	\IfBooleanTF{#1}%
+		{\mbox{\sm@cmd{#2}}}
+		{\sm@cmd{#2}}}
+
+%% Italicized semantic variables.
+%%
+%% Semantics not in math mode needs explicit italicization, but this should be
+%% presentationally separated from hardcoded \textit{…}. This pair of commands
+%% follows the \fm and \sm templates above.
+\ProvideDocumentCommand \sv@cmd { m } {\textit{#1}}
+%% The \sm command has an optional star to prevent hyphenation via
+%% an \mbox, just like \fm above.
+\ProvideDocumentCommand \sv { s m } {%
+	\IfBooleanTF{#1}%
+		{\mbox{\sv@cmd{#2}}}
+		{\sv@cmd{#2}}}
+
+
+%% Semantic operator names.
+\ProvideDocumentCommand \smop { m } {\textsc{#1}}
+
+%% Language name abbreviations.
+\ProvideDocumentCommand \lgname { m } {\textsc{#1}}
+
+%% Terminology.
+%%
+%% FIXME: This should call a hook that can be used by indexing software
+%% to track the page number, add a hyperref, etc.
+\ProvideDocumentCommand \term { m } {\textsc{#1}}
+
+%% Symbols.
+%%
+%% FIXME: Detect lack of \symfont and print warning.
+\ProvideDocumentCommand \sym { m } {{\symfont #1}}
+
+%% Phonetics.
+%%
+%% FIXME: Detect lack of \ipafont and print warning.
+\ProvideDocumentCommand \ipa { m } {{\ipafont #1}}
+
+%% Morphology.
+\ProvideDocumentCommand \mph { m } {\ipa{|}#1\ipa{|}}
+
+%% Subscript italic indices.
+%%
+%% FIXME: Detect whether font has a specific subscript (e.g. U+1D62).
+\ProvideDocumentCommand \ix { m } {\textsubscript*{\textit{#1}}}
+
+%% Phrase labels.
+%%
+%% FIXME: Provide star to toggle fake subscripts or real ones. This
+%% should be the inverse of the star for \textsubscript.
+\ProvideDocumentCommand \pr { m } {\textsubscript*{#1}}
+
+%% An unattested reconstructed form, or sometimes an ungrammatical form,
+%% marked with a star. This is intended to have some minor kerning adjustment
+%% for italics. If not using italics, don't use this.
+%%
+%% FIXME: Calculate the kerning from the font.
+\newlength{\ufkern}
+\setlength{\ufkern}{-0.0125ex}
+\ProvideDocumentCommand \uf {} {*\hspace{\ufkern}}
+
+%% A marker for questionable forms.
+\newlength{\qfkern}
+\setlength{\qfkern}{\ufkern}
+\ProvideDocumentCommand \qf {} {\textsuperscript*{\textbf{?}}\hspace{\qfkern}}
+
+%% A marker for dead forms.
+\newlength{\dfkern}
+\setlength{\dfkern}{\ufkern}
+\ProvideDocumentCommand \df {} {\textsuperscript*{\textbf{†}}\hspace{\dfkern}}
+
+%% A marker for dialectal forms.
+\newlength{\Dfkern}
+\setlength{\Dfkern}{\ufkern}
+\ProvideDocumentCommand \Df {} {˟\hspace{\Dfkern}}
+
+%% A marker for unelicited forms.
+\newlength{\Ufkern}
+\setlength{\Ufkern}{\ufkern}
+\ProvideDocumentCommand \Uf {} {\textbf{\%}\hspace{\Ufkern}}
+
+%% A marker for infelicitous or uninterpretable forms.
+\newlength{\Ifkern}
+\setlength{\Ifkern}{\ufkern}
+\ProvideDocumentCommand \If {} {\textbf{\#}\hspace{\Ifkern}}
+
+%% An underscore.
+%%
+%% Both measurements are font dependent and thus adapt to different font sizes.
+%% The thickness measurement was empirically determined.
+\newlength{\uscorethickness}
+\setlength{\uscorethickness}{0.15625ex}
+\newlength{\uscorewidth}
+\setlength{\uscorewidth}{1.25ex}
+\renewcommand*{\_}{\rule{\uscorewidth}{\uscorethickness}}
+
+%% Position class markers.
+\ProvideDocumentCommand \pn { m } {\textsubscript*{#1}}
+\ProvideDocumentCommand \SBJ {} {\pn{+2}}
+\ProvideDocumentCommand \OBJ {} {\pn{+14}}
+
+%% Dialect stigmata.
+%%
+%% FIXME: Detect whether font has real uppercase subscripts, use them instead.
+\newcommand*{\TT}{\textsubscript*{T}}
+\newcommand*{\ST}{\textsubscript*{S}}
+\newcommand*{\HT}{\textsubscript*{H}}
+\newcommand*{\RT}{\textsubscript*{R}}
+\newcommand*{\NT}{\textsubscript*{N}}
+\newcommand*{\IT}{\textsubscript*{I}}
+\newcommand*{\GT}{\textsubscript*{G}}
+\newcommand*{\AT}{\textsubscript*{A}}
+
+%% Orthographic representation.
+\newcommand*{\orth}[1]{⟨#1⟩}
+
+%% Notes for later changes.
+%%
+%% FIXME: Detect whether font has U+27E6 & U+27E7, use them instead.
+\newlength{\dblbrackkern}
+\setlength{\dblbrackkern}{-0.325ex}
+\newcommand*{\dblbrackleft}{[\hspace{\dblbrackkern}[}
+\newcommand*{\dblbrackright}{]\hspace{\dblbrackkern}]}
+\newcommand{\FIXME}[1]{\mbox{\dblbrackleft}\textsc{Fixme}: #1\mbox{\dblbrackright}}
+
+%% A tilde.
+\renewcommand*{\~}{\textasciitilde}
+
+%% The little vP.
+\ProvideDocumentCommand \vv {} {\texorpdfstring{\emph{v}}{𝑣}}
+\ProvideDocumentCommand \vP {} {\vv{}P}
+
+%% Little vP's friend, the little nP.
+\ProvideDocumentCommand \nn {} {\texorpdfstring{\emph{n}}{𝑛}}
+\ProvideDocumentCommand \nP {} {\nn{}P}
+
+%% A little cP for the clausal shell.
+\ProvideDocumentCommand \cc {} {\texorpdfstring{\emph{c}}{𝑐}}
+\ProvideDocumentCommand \cP {} {\cc{}P}
+
+%% A little pro and a big PRO.
+\ProvideDocumentCommand \pro {} {\emph{pro}}
+\ProvideDocumentCommand \PRO {} {PRO}

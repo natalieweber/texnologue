@@ -1,0 +1,113 @@
+%!TEX encoding = UTF-8 Unicode
+
+\ProvidesExplPackage{hypercrippen}{2014/10/16}{2.2}{Generic hyperref setup for James A. Crippen}
+
+%% History.
+%%
+%% 2014/11/12 0.1
+%%   Created from settings in a few other documents.
+%% 2015/05/11 0.2
+%%   Added hypbmsec package for controlling PDF bookmark strings.
+
+%% Colours.
+%%
+%% Other things might also load this, but belt and suspenders.
+\usepackage{xcolor}
+
+%% HyperXMP.
+%%
+%% This package supports the encoding of Adobe’s XMP metadata in documents via hyperref.
+%% Since it modifies hyperref it needs to be loaded before that package.
+%%
+%% Note: “the xdvipdfmx back end compresses all pdf objects, including the ones containing
+%%   XMP metadata. While Adobe Acrobat can still detect and utilize the XMP metadata,
+%%   non-PDF-aware applications are unlikely to see the metadata. Three options to consider
+%%   are to (1) use a different program (e.g., LuaLaTeX), (2) pass the --output-driver=
+%%   "xdvipdfmx -z0" option to XeLaTeX to instruct xdvipdfmx to turn off all compression
+%%   (which will of course make the PDF file substantially larger), or (3) postprocess the
+%%   generated pdf file by loading it into the commercial version of Adobe Acrobat and
+%%   re-saving it with the Save As… menu option.”
+\usepackage{hyperxmp}
+
+%% Hyperref: Hyperlinks inside and outside the document.
+%%
+%% Hyperref controls the colours of links (citations, URLs, etc.) which are produced by BibLaTeX.
+%% To turn off colouring completely, set both colorlinks=false and pdfborder={0 0 0}.
+\usepackage{hyperref}
+%% Hyperref configuration.
+\hypersetup{%
+	% Speak Unicode.
+	unicode,
+	% Break links across lines into two separate identical links.
+	breaklinks=true,
+	% Whether to colour link text.
+	%colorlinks=false,
+	colorlinks=true,
+	% Colours of link text {R G B}.
+	linkcolor={rgb:blue,1;black,1},
+	%linkcolor=black,
+	anchorcolor=black,
+	%citecolor=green,
+	citecolor=black,
+	filecolor=cyan,
+	menucolor=red,
+	runcolor=cyan,
+	urlcolor=blue,
+	% How links behave when clicked: /O outline, /I inverse, /N nothing, /P "pressed" inset
+	% Note that many PDF viewers seem to ignore this.
+	pdfhighlight=/P,
+	% Thickness of border around links. (An alternative to coloured text.)
+	% This is automatically disabled if colorlinks=true.
+	%pdfborder={0 0 1},
+	pdfborder={0~0~0},
+	% Colours of borders, {R~G~B}
+	citebordercolor={0~1~0},
+	filebordercolor={1~.5~.5},
+	linkbordercolor={1~0~0},
+	menubordercolor={1~0~0},
+	urlbordercolor={0~0~1},
+	runbordercolor={0~.7~.7},
+	%% Bookmarks configuration.
+	% List section numbers in bookmarks.
+	bookmarksnumbered=true,
+	% Whether bookmarks are open by default.
+	bookmarksopen=true,
+	% How deep bookmarks should be open by default.
+	bookmarksopenlevel=3,
+	%% HyperXMP stuff.
+	pdfauthor={James A. Crippen},
+	pdfauthortitle={PhD candidate},
+	pdfcopyright={Copyright © 2014 James A. Crippen},
+	pdfkeywords={syntax, Minimalist Program, information structure, dislocation},
+	pdfcaptionwriter={James A. Crippen},
+	pdfcontactaddress={2613 West Mall},
+	pdfcontactcity={Vancouver},
+	pdfcontactregion={BC},
+	pdfcontactpostcode={V6T 1Z4},
+	pdfcontactcountry={Canada},
+	pdfcontactphone={604-822-0415},
+	pdfcontactemail={jcrippen@gmail.com},
+	pdfcontacturl={http://www.drangle.com/~james},
+	pdflang={en}
+}
+
+%% A hack to get hyperref to shut up.
+%% FIXME: There are probably ways to do this by redefining \fm using the LaTeX3 xparse package
+%%   and \DeclareExpandableDocumentCommand. The problem is with moving arguments, I think.
+%%   Currently using hypbmsec below is a decent workaround.
+%\pdfstringdefDisableCommands{\def\fm#1{#1}}
+
+%% Bookmarks.
+%%
+%% This gives more control over PDF bookmarks, which are used to link to all the sectional divisions.
+\usepackage[final]{bookmark}
+
+%% Sectioning (bookmarks) syntax extension.
+%%
+%% This extends the syntax of the sectioning commands (\part, \section, \paragraph, etc.)
+%% so that they have an additional argument. This new argument, delimited by parentheses,
+%% contains the text to be emitted in a PDF bookmark.
+%%
+%% Usage:
+%%  \section(PDF bookmark string)[ToC entry string]{Section title}
+\usepackage{hypbmsec}

@@ -1,0 +1,128 @@
+%!TEX encoding = UTF-8 Unicode
+
+%%% Strikeout text with TikZ.
+%%%
+%%% Some strike out (or strikethrough) macros that use TikZ. These are
+%%% more configurable than the macros provided by the ulem and soul
+%%% packages. The idea is to provide a general macro for strikethrough
+%%% of arbitrary text, then some macros that do specific flavours of
+%%% strikethrough (double-lines, diagonal, etc.).
+%%%
+%%% The cancel package does a good job of simple strikeout text but
+%%% it's not configurable enough. TikZ provides maximal configurability,
+%%% but of course it requires all of TikZ to do it. Users should only use
+%%% this if they already need TikZ, or if they don't mind it being loaded.
+%%%
+%%% TO DO:
+%%% - fixed height
+%%%   - edges are at middle height which changes depending on text
+%%%   - may be solved with just a strut in the text node
+%%%     - the strut should be user-specifiable
+%%% - global height (yshift) adjustment
+%%%   - fixed height is calculated, then a global increase or decrease
+%%%   - this applies to both edge nodes, not just one
+%%% - shorthand nwse and swne for angled strikeouts
+%%%   - empirically determine some good yshifts
+%%% - support for dash patterns and phases
+%%%   - also support dash pattern styles ("densely dash dot", etc.)
+%%% - double strikeouts using two lines above and below edge nodes
+%%%   - two parallel lines equidistant from edge nodes
+%%%   - can't use TikZ [double lines] because they are opaque
+%%% - line decoration using decorations library
+%%% - slashouts and ex-outs
+%%%   - probably best done using decorations
+
+\ProvidesExplPackage{tikz-sout}{2015/09/14}{0.2}{Strikeout text using TikZ}
+\ExplSyntaxOff
+
+%% History.
+%%
+%% 2014/10/16 0.1
+%%   Created.
+%% 2015/09/14 0.2
+%%   Revised. Now it works.
+
+%% The new LaTeX3 generic document command parser.
+\RequirePackage{xparse}
+
+%% TikZ ist kein Zeichenprogramm.
+\RequirePackage{tikz}
+
+%% The positioning library adds tools for placing nodes.
+\usetikzlibrary{positioning}
+
+%%
+%% Key-value settings.
+%%
+
+%% Create the key tree.
+\pgfkeys{/sout/.is family}
+
+%% Define the various keys and their initial/default values.
+\pgfqkeys{/sout}{%
+	% Basic line properties.
+	weight/.initial			= 0.5pt,
+	color/.initial			= black,
+	cap/.initial			= butt,
+	% Adjustments for line start and end positions.
+	start xshift/.initial		= 0pt,
+	start yshift/.initial		= 0pt,
+	end xshift/.initial		= 0pt,
+	end yshift/.initial		= 0pt}
+
+%% Reset to factory defaults.
+\ProvideDocumentCommand \soutresetdefaults {} {%
+	\pgfqkeys{/sout}{%
+		weight			= 0.5pt,
+		color			= black,
+		cap				= butt,
+		start xshift		= 0pt,
+		start yshift		= 0pt,
+		end xshift			= 0pt,
+		end yshift			= 0pt}}
+
+%% Modify defaults.
+\ProvideDocumentCommand \soutsetdefaults {m} {%
+	\pgfqkeys{/sout}{#1}}
+
+%%
+%% The user interface.
+%%
+
+%% Draw the strikeout line.
+%%
+%% Args:
+%%   1: star draws the text node with a surrounding box
+%%   2: key-value options
+%%   3: text to print in the text node
+%%
+%% The mechanism is to first draw a node with some text in it,
+%% then to draw invisible nodes at the start (left) and end (right)
+%% positions, and then to draw a line -- the strikeout -- between
+%% the two invisible edge nodes. The line is drawn using TikZ's
+%% [overlay] option so that it has no effect on spacing.
+\ProvideDocumentCommand \sout {s O{} m} {%
+	{% This first brace restricts the scope of \pgfkeys so it's not global.
+	% Process key-value arguments.
+	\IfNoValueTF{#2}{}{\pgfkeys{/sout, #2}}%
+	% Draw stuff.
+	\tikz[baseline=(souttext.base)]{%
+		% The text node.
+		\node[inner sep=0pt, outer sep=0pt,
+				\IfBooleanTF{#1}{draw}{}] (souttext) {#3};
+		% Edge node at the start position (left) of the strikeout line.
+		\node[shape=coordinate, inner sep=0pt, outer sep=0pt,
+				xshift=\pgfkeysvalueof{/sout/start xshift},
+				yshift=\pgfkeysvalueof{/sout/start yshift}]
+			(soutstart) at (souttext.west) {};
+		% Edge node at the end position (right) of the strikeout line.
+		\node[shape=coordinate, inner sep=0pt, outer sep=0pt,
+				xshift=\pgfkeysvalueof{/sout/end xshift},
+				yshift=\pgfkeysvalueof{/sout/end yshift}]
+			(soutend) at (souttext.east) {};
+		% The strikeout line.
+		\draw[overlay,% The [overlay] suppresses the bounding box.
+				color=\pgfkeysvalueof{/sout/color},
+				line width=\pgfkeysvalueof{/sout/weight},
+				line cap=\pgfkeysvalueof{/sout/cap}]
+			(soutstart) -- (soutend);}}}
