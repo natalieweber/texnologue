@@ -1,4 +1,4 @@
-\ProvidesFile{lsalike.bbx}[2015/09/28 v0.8g biblatex linguistic bibliographies]
+\ProvidesFile{lsalike.bbx}[2016/03/22 v0.8h biblatex linguistic bibliographies]
 
 % Changelog
 %
@@ -6,6 +6,7 @@
 % 0.8e 2015/02/06 - Added Stanford Encyclopedia of Philosophy to eprint types.
 % 0.8f 2015/03/13 - Added Berkeley Linguistics Society proceedings to eprint.
 % 0.8g 2015/09/28 - Fixed LingBuzz reference.
+% 0.8h 2016/03/22 - Fixed LingBuzz reference again.
 
 % This style will probably work with slightly older versions of BibLaTeX in
 % the 0.9 series, but it is best to assume version 1.0 which has been the
@@ -580,7 +581,7 @@
 \DeclareFieldFormat{eprint:lingbuzz}{%
   LingBuzz\acronymcolon\space
   \ifhyperref
-    {\href{http://ling.auf.net/#1}{\nolinkurl{#1}}}
+    {\href{http://ling.auf.net/lingbuzz/#1}{\nolinkurl{#1}}}
     {\nolinkurl{#1}}}
 \DeclareFieldAlias{eprint:LingBuzz}{eprint:lingbuzz}
 \DeclareFieldAlias{eprint:lingBuzz}{eprint:lingbuzz}
