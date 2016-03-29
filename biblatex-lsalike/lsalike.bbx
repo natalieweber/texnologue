@@ -1,4 +1,4 @@
-\ProvidesFile{lsalike.bbx}[2016/03/22 v0.8h biblatex linguistic bibliographies]
+\ProvidesFile{lsalike.bbx}[2016/03/29 v0.8i biblatex linguistic bibliographies]
 
 % Changelog
 %
@@ -7,17 +7,18 @@
 % 0.8f 2015/03/13 - Added Berkeley Linguistics Society proceedings to eprint.
 % 0.8g 2015/09/28 - Fixed LingBuzz reference.
 % 0.8h 2016/03/22 - Fixed LingBuzz reference again.
+% 0.8i 2016/03/29 - Updated DeclareNameFormat to work with BibLaTeX 3.3.
 
 % This style will probably work with slightly older versions of BibLaTeX in
 % the 0.9 series, but it is best to assume version 1.0 which has been the
 % focus of all testing. Adventurous users can change this if they don't want
 % to install a newer BibLaTeX version.
-\@ifpackagelater{biblatex}{2010/11/19}
+\@ifpackagelater{biblatex}{2016/03/03}
   {}
   {\PackageError{biblatex}
     {Outdated 'biblatex' package'}
     {The version of the 'lsalike' style you are using\MessageBreak
-     requires biblatex v1.0 or later.\MessageBreak
+     requires biblatex v3.3 or later.\MessageBreak
      You are using: '\csuse{ver@biblatex.sty}'.\MessageBreak
      This is a fatal error. I'm aborting now.}%
    \endinput}
@@ -45,7 +46,7 @@
   autocite=inline,	% \autocite produces inline citations
   sorting=nyt,		% sort by name, year, title
   useeditor=true,	% editor replaces author if author is missing
-  firstinits=false,	% do not initialize firstname
+  giveninits=false,	% do not initialize givenname
   maxnames=5,		% maximum number of names before et al. (bib & cite)
   maxbibnames=3,	% maximum number of names before et al. (bibliogr only) 
   maxcitenames=3,	% maximum number of names before et al. (citation only) 
@@ -664,31 +665,66 @@
 % #7 name suffix, a.k.a. 'junior/number part'
 % #8 name suffix initials
 
-% The name formats are adapted from biblatex.def.
+% The name formats are adapted from biblatex_.def.
 
-\DeclareNameFormat{first-last:sc}{%
-  \iffirstinits
-    {\usebibmacro{name:first-last:sc}{#1}{#4}{#5}{#7}}
-    {\usebibmacro{name:first-last:sc}{#1}{#3}{#5}{#7}}%
+\DeclareNameFormat{given-family:sc}{%
+  \nameparts{#1}%
+  \ifgiveninits
+    {\usebibmacro{name:given-family:sc}
+     {\namepartfamily}
+     {\namepartgiveni}
+     {\namepartprefix}
+     {\namepartsuffix}}
+    {\usebibmacro{name:given-family:sc}
+     {\namepartfamily}
+     {\namepartgiven}
+     {\namepartprefix}
+     {\namepartsuffix}}%
   \usebibmacro{name:andothers}}
 
-\DeclareNameFormat{last-first:sc}{%
-  \iffirstinits
-    {\usebibmacro{name:last-first:sc}{#1}{#4}{#5}{#7}}
-    {\usebibmacro{name:last-first:sc}{#1}{#3}{#5}{#7}}%
+\DeclareNameFormat{family-given:sc}{%
+  \nameparts{#1}%
+  \ifgiveninits
+    {\usebibmacro{name:family-given:sc}
+     {\namepartfamily}
+     {\namepartgiveni}
+     {\namepartprefix}
+     {\namepartsuffix}}
+    {\usebibmacro{name:family-given:sc}
+     {\namepartfamily}
+     {\namepartgiven}
+     {\namepartprefix}
+     {\namepartsuffix}}%
   \usebibmacro{name:andothers}}
 
-\DeclareNameFormat{last-first/first-last:sc}{%
+\DeclareNameFormat{family-given/given-family:sc}{%
+  \nameparts{#1}%
   \ifnumequal{\value{listcount}}{1}
-    {\iffirstinits
-       {\usebibmacro{name:last-first:sc}{#1}{#4}{#5}{#7}}
-       {\usebibmacro{name:last-first:sc}{#1}{#3}{#5}{#7}}%
-     \ifblank{#3#5}
+    {\ifgiveninits
+       {\usebibmacro{name:family-given:sc}
+        {\namepartfamily}
+        {\namepartgiveni}
+        {\namepartprefix}
+        {\namepartsuffix}}
+       {\usebibmacro{name:family-given:sc}
+        {\namepartfamily}
+        {\namepartgiven}
+        {\namepartprefix}
+        {\namepartsuffix}}%
+     \ifblank{\namepartgiven\namepartprefix}
        {}
        {\usebibmacro{name:revsdelim}}}
-    {\iffirstinits
-       {\usebibmacro{name:first-last:sc}{#1}{#4}{#5}{#7}}
-       {\usebibmacro{name:first-last:sc}{#1}{#3}{#5}{#7}}}%
+    {\ifgiveninits
+       {\usebibmacro{name:given-family:sc}
+        {\namepartfamily}
+        {\namepartgiveni}
+        {\namepartprefix}
+        {\namepartsuffix}}
+       {\usebibmacro{name:given-family:sc}
+        {\namepartfamily}
+        {\namepartgiven}
+        {\namepartprefix}
+        {\namepartsuffix}}}%
   \usebibmacro{name:andothers}}
 
 % The name formatting macros are also adapted from biblatex.def.
@@ -700,7 +736,7 @@
 % ampersand with small caps enabled. This would be surprising to the user, so
 % we only apply small caps to names.
 
-\newbibmacro*{name:first-last:sc}[4]{%
+\newbibmacro*{name:given-family:sc}[4]{%
   \usebibmacro{name:delim}{#2#3#1}%
   \usebibmacro{name:hook}{#2#3#1}%
   \ifblank{#2}{}{\mkbibscap{\mkbibnamefirst{#2}}\isdot\addlowpenspace}%
@@ -712,7 +748,7 @@
   \mkbibscap{\mkbibnamelast{#1}}\isdot
   \ifblank{#4}{}{\addlowpenspace\mkbibscap{\mkbibnameaffix{#4}}\isdot}}
 
-\newbibmacro*{name:last-first:sc}[4]{%
+\newbibmacro*{name:family-given:sc}[4]{%
   \ifuseprefix
     {\usebibmacro{name:delim}{#3#1}%
      \usebibmacro{name:hook}{#3#1}%
@@ -748,11 +784,11 @@
        {\usebibmacro{bbx:savehash}%
         \iftoggle{lsa:ae-lastfirst}
           {\iftoggle{lsa:scauthor}
-             {\printnames[last-first:sc]{author}}
-             {\printnames[last-first]{author}}}%
+             {\printnames[family-given:sc]{author}}
+             {\printnames[family-given]{author}}}%
           {\iftoggle{lsa:scauthor}
-             {\printnames[last-first/first-last:sc]{author}}
-             {\printnames[last-first/first-last]{author}}}%
+             {\printnames[family-given/given-family:sc]{author}}
+             {\printnames[family-given/given-family]{author}}}%
 	\iffieldundef{authortype}
 	  {\setunit{\addspace}}
 	  {\setunit{\addcomma\space}}}%
@@ -781,11 +817,11 @@
        {\bibnamedash}
        {\iftoggle{lsa:ae-lastfirst}
           {\iftoggle{lsa:scauthor}
-             {\printnames[last-first:sc]{editor}}
-             {\printnames[last-first]{editor}}}
+             {\printnames[family-given:sc]{editor}}
+             {\printnames[family-given]{editor}}}
           {\iftoggle{lsa:scauthor}
-             {\printnames[last-first/first-last:sc]{editor}}
-             {\printnames[last-first/first-last]{editor}}}%
+             {\printnames[family-given/given-family:sc]{editor}}
+             {\printnames[family-given/given-family]{editor}}}%
         \iftoggle{lsa:noedparens}
           {\setunit{\addcomma\space}%
            \usebibmacro{bbx:savehash}%
@@ -805,10 +841,10 @@
   \ifnameundef{editor}
     {}
     {\iftoggle{lsa:ed-onelastfirst}
-       {\printnames[last-first/first-last]{editor}}
+       {\printnames[family-given/given-family]{editor}}
        {\iftoggle{lsa:ed-lastfirst}
-          {\printnames[last-first]{editor}}
-          {\printnames[first-last]{editor}}}%
+          {\printnames[family-given]{editor}}
+          {\printnames[given-family]{editor}}}%
      \iftoggle{lsa:noedparens}
        {\setunit{\addcomma\space}%
         \usebibmacro{editorstrg}}
