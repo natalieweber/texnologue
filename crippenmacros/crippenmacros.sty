@@ -8,7 +8,7 @@
 %%% sensibilities, but I welcome constructive criticism if working code is
 %%% included.
 
-\ProvidesExplPackage{crippenmacros}{2015/12/16}{3.6}{James A. Crippen's macrology}
+\ProvidesExplPackage{crippenmacros}{2017/02/27}{3.7}{James A. Crippen's macrology}
 
 %% History.
 %%
@@ -59,6 +59,8 @@
 %%   Added centering \clap counterpart to \llap and \rlap.
 %% 2015/12/16 3.6
 %%   Added \sv for semantic variables in text, and incluided \smop.
+%% 2017/02/27 3.7
+%%   Changed \~ to use \char`~ instead of \textasciitilde.
 
 %% Only tested with XeLaTeX.
 %% There is Unicode (UTF-8) text in this file, both in the comments and in
@@ -908,7 +910,11 @@
 \newcommand{\FIXME}[1]{\mbox{\dblbrackleft}\textsc{Fixme}: #1\mbox{\dblbrackright}}
 
 %% A tilde.
-\renewcommand*{\~}{\textasciitilde}
+%\renewcommand*{\~}{\textasciitilde}
+%% For some reason the \textasciitilde macro has recently (circa
+%% February 2017) started producing U+02DC Small Tilde instead
+%% of U+007E Tilde. This forces the latter character.
+\renewcommand*{\~}{\char`~}
 
 %% The little vP.
 \ProvideDocumentCommand \vv {} {\texorpdfstring{\emph{v}}{𝑣}}
