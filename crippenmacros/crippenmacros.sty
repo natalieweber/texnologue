@@ -8,7 +8,7 @@
 %%% sensibilities, but I welcome constructive criticism if working code is
 %%% included.
 
-\ProvidesExplPackage{crippenmacros}{2017/02/27}{3.7}{James A. Crippen's macrology}
+\ProvidesExplPackage{crippenmacros}{2017/04/24}{4.0}{James A. Crippen's macrology}
 
 %% History.
 %%
@@ -61,6 +61,8 @@
 %%   Added \sv for semantic variables in text, and incluided \smop.
 %% 2017/02/27 3.7
 %%   Changed \~ to use \char`~ instead of \textasciitilde.
+%% 2017/04/24 4.0
+%%   Flushed many obsolete macros. Renamed \nd to \ND; replaced newcommands.
 
 %% Only tested with XeLaTeX.
 %% There is Unicode (UTF-8) text in this file, both in the comments and in
@@ -71,9 +73,7 @@
 %% assumptions about other packages herein.
 
 %% The new LaTeX3 generic document command parser.
-%%
-%% FIXME: Convert all \newcommands below to the \ProvideDocumentCommand format.
-\RequirePackage{xparse}
+RequirePackage{xparse}
 %% The new xparse package doesn’t have something built in to test if
 %% something is either -NoValue- or just empty, but it’s easy enough to
 %% implement, so here we go.
@@ -81,7 +81,7 @@
 %% FIXME: Detect if this is defined elsewhere, in case someone else
 %% implements this obvious function.
 \ExplSyntaxOn
-\DeclareExpandableDocumentCommand \IfNoValueOrEmptyTF {mmm}
+\ProvideExpandableDocumentCommand \IfNoValueOrEmptyTF {mmm}
  	{\IfNoValueTF{#1}{#2}
 		{\tl_if_empty:nTF {#1} {#2} {#3}}}
 \ExplSyntaxOff
@@ -97,27 +97,13 @@
 %% Tonnes of LaTeX programming goodies.
 \RequirePackage{etoolbox}
 
-%% We don’t actually require TikZ because it’s a big package. The author
-%% is required to do so if they want to use TikZ macros in here.
-%%\RequirePackage{tikz}
-
-%% A box with zero height and zero width.
-%%
-%% This is especially useful in trees where some stuff in a node shouldn’t be
-%% included in the calculation of the central point of the node. Subscripts are
-%% a prime example. It can also be useful in tables for the same purpose.
-%%
-%% FIXME: Reimplement in plain TeX.
-\ProvideDocumentCommand \fakebox {O{l} m}
-	{\raisebox{0pt}[\height][0pt]{\makebox[0pt][#1]{#2}}}
-
 %% Hanging ungrammatical marker.
 %%
 %% This obliterates the original TeX macro of \* which is a diacritic that
 %% is pointless in the context of Unicode.
 %%
 %% FIXME: Is math mode a problem?
-\renewcommand*{\*}{\llap{*}}
+\ProvideDocumentCommand \* {\llap{*}}
 
 %% Hanging questionable marker.
 %%
@@ -159,45 +145,6 @@
 		% Use \texorpdfstring.
 		% FIXME: Using \ProvideDocumentCommand doesn’t work here. Why?
 		{\newcommand{\nul}{\texorpdfstring{{\zerofont 0}}{∅}}}}
-
-%% Swap 0 for \nul, to be used in assorted macros.
-%% This of course expects \nul to be defined.
-%%
-%% FIXME: Not smart.
-\ProvideDocumentCommand \nulswitch { m }%
-	% If given 0 or ∅
-	{\ifthenelse{\equal{#1}{0}\OR\equal{#1}{∅}}%
-		% Then say \nul.
-		{\nul}
-		% Else if given \gm{0} or \gm{∅}
-		{\ifthenelse{\equal{#1}{\gm{0}}\OR\equal{#1}{\gm{∅}}}%
-			% Then say \gm{\nul}
-			{\gm{\nul}}%
-			% Else whatever was given.
-			{#1}}}
-
-%% Swap various horizontal dashes for the minus sign.
-%%
-%% FIXME: Should be able to do this with a list instead of all the \ORs.
-%% FIXME: Use LaTeX3 here instead.
-\ProvideDocumentCommand \minusswitch { m }
-	{\ifthenelse
-			% U+002D Hyphen-Minus
-			{\equal{#1}{-}
-			% U+2010 Hyphen
-			\OR\equal{#1}{‐}
-			% U+2012 Figure Dash
-			\OR\equal{#1}{‒}
-			% U+2013 En Dash
-			\OR\equal{#1}{–}
-			% U+2014 Em Dash
-			\OR\equal{#1}{—}
-			% U+2015 Horizontal Bar
-			\OR\equal{#1}{―}}
-		% U+2212 Minus Sign
-		{−}
-		% Else whatever was given.
-		{#1}}
 
 %% Gloss abbreviations.
 %%
@@ -278,223 +225,6 @@
 \ExplSyntaxOff
 
 %%%
-%%% Classifiers.
-%%%
-
-%% Spaces for the classifier macros below.
-%%
-%% FIXME: Calculate from the font’s geometries.
-\newlength{\clspacelength}
-\setlength{\clspacelength}{0.125ex}
-\ProvideDocumentCommand \clspace { } {\hspace{\clspacelength}}
-\newlength{\clbkspacelength}
-\setlength{\clbkspacelength}{-0.125ex}
-\ProvideDocumentCommand \clbkspace { } {\hspace{\clbkspacelength}}
-\newlength{\clsnuglength}
-\setlength{\clsnuglength}{-0.0625ex}
-\ProvideDocumentCommand \clsnug { } {\hspace{\clsnuglength}}
-
-%% Bolded classifier D or I components, calls \minusswitch defined above.
-%%
-%% This allows one to say things like \cl{\gm{+}}{s}{+} so that the D
-%% component is bolded with the \gm{...} gloss emphasis macro.
-%%
-%% Yes, this is a kluge.
-%%
-%% FIXME: Should parse out the \gm{...} bit and then use \minusswitch.
-\ProvideDocumentCommand \clemph { m m }
-	{\ifthenelse
-			% U+002D Hyphen-Minus
-			{\equal{#1}{\gm{-}}
-			% U+2010 Hyphen
-			\OR\equal{#1}{\gm{‐}}
-			% U+2012 Figure Dash
-			\OR\equal{#1}{\gm{‒}}
-			% U+2013 En Dash
-			\OR\equal{#1}{\gm{–}}
-			% U+2014 Em Dash
-			\OR\equal{#1}{\gm{—}}
-			% U+2015 Horizontal Bar
-			\OR\equal{#1}{\gm{―}}}
-		{\gm{−#2}}
-		{\ifthenelse{\equal{#1}{\gm{+}}}
-			{\gm{+#2}}
-			{\minusswitch{#1}#2}}}
-
-%% Tlingit classifier macro.
-%%
-%%  arg 1: star
-%%  arg 2: D component
-%%  arg 3: S component
-%%  arg 4: I component
-%%
-%% Ex: \cl{+}{s}{+} → \zz{cl}[\zz{+d}, s, \zz{+i}]
-%%   but with some extra formatting.
-%%
-%% If supplied with a star then this macro will switch to a formatting
-%% style suitable for body text rather than in an example. This entails
-%% less spacing spacing adjustments and the use of \xx{} rather than
-%% \zz{} for the D and I components, and the default font rather than
-%% \glossfont for the S component.
-%%
-%% This macro calls \clemph and \nulswitch in an attempt to do the
-%% right thing when seeing 0 or an emphasized element with \gm{...}.
-%%
-%% FIXME: Should be a better way than overusing \IfBooleanTF.
-\ProvideDocumentCommand \cl { s m m m } {%
-	% Print the classifier abbreviation.
-	\IfBooleanTF{#1}{\xx}{\zz}{cl}%
-	% Print the opening bracket.
-	\IfBooleanTF{#1}{}{\clbkspace}[%
-	% Print the D component.
-	\IfBooleanTF{#1}{\xx}{\zz}{%
-		\IfBooleanTF{#1}{}{\clbkspace}%
-		\clemph{#2}{d}}%
-	% Print comma and space.
-	,\IfBooleanTF{#1}{\space}{\clspace}%
-	% Print the S component.
-	{\IfBooleanTF{#1}{}{\glossfont}%
-		\nulswitch{#3}%
-	}%
-	% Print comma and space.
-	,\IfBooleanTF{#1}{\space}{\clspace}%
-	% Print the I component.
-	{\IfBooleanTF{#1}{\xx}{\zz}{%
-		\clemph{#4}{i}}}%
-	% Print the closing bracket.
-	\IfBooleanTF{#1}{]}{\clsnug]\clsnug}}
-
-%% Classifier macro for verb theme definitions, only specifies ±D and S.
-%% The mnemonic is 'short cl'. This can also be used for Athabaskan
-%% languages since they lack [±I].
-%% 
-%% This is in an mbox to prevent line breaking inside of it.
-%%
-%% Arguments are as above.
-\ProvideDocumentCommand \scl { s m m } {\mbox{%
-	% Print the classifier abbreviation.
-	\IfBooleanTF{#1}{}{\xx{cl}\clbkspace}%
-	% Print the opening bracket.
-	[%
-	% Print the D component.
-	\clbkspace\xx{\clemph{#2}{d}}%
-	% Print comma and space.
-	,\clspace{}%
-	% Print the S component.
-	\nulswitch{#3}%
-	% Print the closing bracket.
-	]%
-	}}
-
-%% A new Tlingit classifier macro.
-%%
-%% We have to keep the old one around for historical reasons,
-%% but this is a slightly better replacement. It doesn’t need to
-%% care about negation because we use privative features now.
-%%
-%% FIXME: Rework this so it can handle the old binary features
-%%  too by detecting the presence of {-,–,—,−}. Then rework
-%%  the \clf macro below to be similarly compatible.
-%%
-%% Classifier abbreviation.
-\ProvideDocumentCommand \clabbrev {} {cl}
-%% Small capitals formatting macro.
-\ProvideDocumentCommand \clscf { m } {\zz{#1}}
-%% Main macro for Tlingit classifier representation.
-%%
-%%   arg 1: star - supress classifier label
-%%   arg 2: optional space command
-%%   arg 2: optional classifier label command
-%%   arg 3: optional feature formatting command
-%%   arg 4: D-component
-%%   arg 5: S-component
-%%   arg 6: I-component
-\ProvideDocumentCommand \clx { s o o m m m } {%
-	% Print the classifier abbreviation. The star suppresses it.
-	\IfBooleanTF{#1}{}
-		{\IfValueTF{#2}
-			{#2{\clabbrev}}
-			{\clscf{\clabbrev}}\clbkspace}%
-	% First print the opening bracket.
-	[\clsnug%
-	% Skip the D-component if empty
-	\IfNoValueOrEmptyTF{#4}{}
-		% otherwise print D-component
-		% with arg 3 as a formatter if it exists.
-		{\IfValueTF{#3}{#3{#4}}{#4}}%
-	% Skip the S-component if empty, or else
-	\IfNoValueOrEmptyTF{#5}{}
-		% first print comma and space if D nonempty
-		{\IfNoValueOrEmptyTF{#4}{}{,\clspace}%
-		% and then print S-component
-		% with arg three as a formatter if it exists.
-		\IfValueTF{#3}{#3{#5}}{#5}}%
-	% Skip the I-component if empty
-	\IfNoValueOrEmptyTF{#6}{}
-		% otherwise if S-component is empty
-		{\IfNoValueOrEmptyTF{#5}
-			% then if D-component is also empty do nothing
-			{\IfNoValueOrEmptyTF{#4}{}
-				% otherwise (nonempty D) print comma and space
-				{,\clspace}}
-			% or else (nonempty S) print comma and space
-			{,\clspace}%
-		% and then print I-component
-		% with arg three as a formatter if it exists.
-		\IfValueTF{#3}{#3{#6}}{#6}}%
-	% And finally print the closing bracket.
-	\clsnug]\clsnug}
-
-%% Macro for representing single classifier features.
-%%
-%%  arg 1: star; gives \xx{cl} before open bracket if used
-%%  arg 2: optional; minus or plus for a binary feature
-%%  arg 3: mandatory; feature name
-%%
-%% Uses \clemph to be reasonable about \gm{...} for emphasizing things.
-%% If arg 2 is given with \gm{...} in it then the whole feature within brackets
-%% will be wrapped in \gm{...}, including arg 3. Arg 2 uses \minusswitch to
-%% convert - to –, and arg 3 uses \nulswitch to convert 0 to \nul.
-\ProvideDocumentCommand \clf { s o m } {%
-	\mbox{%
-		\IfBooleanTF{#1}{\xx{cl}}{}%
-		[%
-		\IfValueTF{#2}%
-			{\xx{\clemph{#2}{#3}}}
-			{\nulswitch{#3}}%
-		]}}
-
-%%%
-%%% Verb themes.
-%%%
-
-%% Basic formatting for the verb theme morpheme string.
-\ProvideDocumentCommand \thm { m } {\emph{#1}}
-
-%% Skip an element in a verb theme if it is given as a star or is empty.
-\ProvideDocumentCommand \thmargignore { m m } {%
-	\ifthenelse{\equal{#1}{*} \OR \equal{#1}{}}%
-		{}% no op
-		{#2}}
-
-%% Verb themes and definitions for running text.
-%%  arg 1: morpheme string
-%%  (ephemera:
-%%    arg 2: conjugation prefix
-%%    arg 3: imperfective stem variation suffix
-%%    arg 4: imperfective type)
-%%  arg 5: translation
-\ProvideDocumentCommand \vthm { s m m m m m } {%
-	% The verb theme morpheme string.
-	\thm{#2} %
-	% The verb theme ephemera.
-	(\thmargignore{#3}{\textit{\nulswitch{#3}}; }%
-		\thmargignore{#4}{\textit{-#4} }%
-		\thmargignore{#5}{#5})%
-	% The verb theme translation.
-	\thmargignore{#6}{ ‘#6’}}
-
-%%%
 %%% Example macros.
 %%%
 
@@ -502,40 +232,11 @@
 %% ExPex 4.0 was the first version available on CTAN.
 
 %% Example comments.
-\ProvideDocumentCommand \excmt { m } {\textit{#1}}
+\ProvideDocumentCommand \excmt { m } {\emph{#1}}
 
-%% Verb themes and definitions in examples.
-%%  arg 1: morpheme string
-%%  (ephemera:
-%%    arg 2: conjugation prefix
-%%    arg 3: imperfective stem variation suffix
-%%    arg 4: imperfective type)
-%%  arg 5: translation
-%%
-%% This is meant to be used in ExPex examples inside of a \begingl ... \endgl
-%% pair. It should occur in the following context:
-%%   \begingl
-%%   	...
-%%   	\glft ...
-%%   		\exthm{}{}{}{}{}
-%%   		\exthm{}{}{}{}{}...
-%%   		\trailingcitation{...}
-%%   		//
-%%   \endgl
-%% The \trailingcitation can precede the \exthm, but both must follow the
-%% actual gloss and must be followed by the ExPex end-of-line //.
-\ProvideDocumentCommand \exthmfnt {} {\small}
-\newlength{\exthmspclength}
-\setlength{\exthmspclength}{0.5ex}
-\ProvideDocumentCommand \exthmspc {} {\hspace{\exthmspclength}}
-\ProvideDocumentCommand \exthmlabel {} {theme}
-\ProvideDocumentCommand \exthm { m m m m m } {%
-	\par\addtolength{\leftskip}{1em}\exthmfnt{}%
-		\exthmlabel{}:\hspace{1ex}\thm{#1}\exthmspc{}%
-		(\thmargignore{#2}{\textit{\nulswitch{#2}};\exthmspc{}}%
-		 \thmargignore{#3}{\textit{-#3}\exthmspc{}}%
-		 \thmargignore{#4}{#4}%
-		)\thmargignore{#5}{\exthmspc{}‘#5’}}
+%% Hanging right example comments.
+\ProvideDocumentCommand \exrtcmt { m } {\rightcomment{\emph{#1}}}
+
 
 %% Right and left overlap macros for aligning between examples.
 %%
@@ -573,7 +274,7 @@
 %%  environment. But \tikzifinpicture is not recursive-safe, so there is some
 %%  undocumented unreliability with it. Anyway, it works in simple cases, so
 %%  that you can use \nd{}{} inside of an ordinary tikzpicture environment.
-\ProvideDocumentCommand \nd { s m m } {%
+\ProvideDocumentCommand \ND { s m m } {%
 	\tikzifinpicture{}{\tikz}\node(#2){\IfBooleanTF{#1}{}{\strut}#3};}
 
 %% Generic setup for TikZ arrows in examples.
@@ -588,7 +289,7 @@
 \ProvideDocumentCommand \tikzexstylesetup { } {%
 	\usetikzlibrary{arrows.meta}%
 	\tikzset{exarrows/.style={semithick,
-		arrows = {-Stealth[scale=1, scale length=1, scale width=1]}}}}
+						arrows = {-Stealth[scale=1, scale length=1, scale width=1]}}}}
 
 %%%
 %%% Tables.
@@ -708,13 +409,6 @@
   }
 \fi
 
-%% Layer names.
-%%
-%% This is an ordinary LaTeX macro. It is meant for referencing
-%% the name of a layer or column in running text. Redefine
-%% this for your formatting preferences.
-\ProvideDocumentCommand \lyname { m } {‘\textit{#1}’}
-
 %%%
 %%% Miscellany.
 %%%
@@ -754,8 +448,8 @@
 %%
 %% These override the builtin ones which are only defined for math mode and
 %% which I don't use.
-\renewcommand*{\!}{\nolinebreak\hspace{0.2ex}}
-\renewcommand*{\:}{\nolinebreak\hspace{-0.2ex}}
+\ProvideDocumentCommand \! {} {\nolinebreak\hspace{0.2ex}}
+\ProvideDocumentCommand \: {} {\nolinebreak\hspace{-0.2ex}}
 
 %% Italicized linguistic forms appearing in text.
 %%
@@ -764,10 +458,12 @@
 \ProvideDocumentCommand \fm@cmd { m } {\emph{#1}}
 %% The \fm command is the user interface.
 %%
-%%  arg 1: star; wraps everything in an mbox to prevent line breaking
-%%    hyphenation can get ugly especially for suffixes
-%%  arg 2: stigma; optional argument to appear before the form
-%%    this can be a star since it is always a square bracket argument
+%%  arg 1: star
+%%    This wraps everything in an mbox to prevent line breaking
+%%    because hyphenation can get ugly especially for suffixes.
+%%  arg 2: stigma
+%%    An optional argument to appear before the form. This can be a
+%%    star (asterisk) since it is always a square bracket argument.
 %%  arg 3: body of linguistic form
 \ProvideDocumentCommand \fm { s O{} m } {%
 	\IfBooleanTF{#1}%
@@ -812,18 +508,10 @@
 %% to track the page number, add a hyperref, etc.
 \ProvideDocumentCommand \term { m } {\textsc{#1}}
 
-%% Symbols.
-%%
-%% FIXME: Detect lack of \symfont and print warning.
-\ProvideDocumentCommand \sym { m } {{\symfont #1}}
-
 %% Phonetics.
 %%
 %% FIXME: Detect lack of \ipafont and print warning.
 \ProvideDocumentCommand \ipa { m } {{\ipafont #1}}
-
-%% Morphology.
-\ProvideDocumentCommand \mph { m } {\ipa{|}#1\ipa{|}}
 
 %% Subscript italic indices.
 %%
@@ -836,40 +524,6 @@
 %% should be the inverse of the star for \textsubscript.
 \ProvideDocumentCommand \pr { m } {\textsubscript*{#1}}
 
-%% An unattested reconstructed form, or sometimes an ungrammatical form,
-%% marked with a star. This is intended to have some minor kerning adjustment
-%% for italics. If not using italics, don't use this.
-%%
-%% FIXME: Calculate the kerning from the font.
-\newlength{\ufkern}
-\setlength{\ufkern}{-0.0125ex}
-\ProvideDocumentCommand \uf {} {*\hspace{\ufkern}}
-
-%% A marker for questionable forms.
-\newlength{\qfkern}
-\setlength{\qfkern}{\ufkern}
-\ProvideDocumentCommand \qf {} {\textsuperscript*{\textbf{?}}\hspace{\qfkern}}
-
-%% A marker for dead forms.
-\newlength{\dfkern}
-\setlength{\dfkern}{\ufkern}
-\ProvideDocumentCommand \df {} {\textsuperscript*{\textbf{†}}\hspace{\dfkern}}
-
-%% A marker for dialectal forms.
-\newlength{\Dfkern}
-\setlength{\Dfkern}{\ufkern}
-\ProvideDocumentCommand \Df {} {˟\hspace{\Dfkern}}
-
-%% A marker for unelicited forms.
-\newlength{\Ufkern}
-\setlength{\Ufkern}{\ufkern}
-\ProvideDocumentCommand \Uf {} {\textbf{\%}\hspace{\Ufkern}}
-
-%% A marker for infelicitous or uninterpretable forms.
-\newlength{\Ifkern}
-\setlength{\Ifkern}{\ufkern}
-\ProvideDocumentCommand \If {} {\textbf{\#}\hspace{\Ifkern}}
-
 %% An underscore.
 %%
 %% Both measurements are font dependent and thus adapt to different font sizes.
@@ -878,43 +532,27 @@
 \setlength{\uscorethickness}{0.15625ex}
 \newlength{\uscorewidth}
 \setlength{\uscorewidth}{1.25ex}
-\renewcommand*{\_}{\rule{\uscorewidth}{\uscorethickness}}
-
-%% Position class markers.
-\ProvideDocumentCommand \pn { m } {\textsubscript*{#1}}
-\ProvideDocumentCommand \SBJ {} {\pn{+2}}
-\ProvideDocumentCommand \OBJ {} {\pn{+14}}
-
-%% Dialect stigmata.
-%%
-%% FIXME: Detect whether font has real uppercase subscripts, use them instead.
-\newcommand*{\TT}{\textsubscript*{T}}
-\newcommand*{\ST}{\textsubscript*{S}}
-\newcommand*{\HT}{\textsubscript*{H}}
-\newcommand*{\RT}{\textsubscript*{R}}
-\newcommand*{\NT}{\textsubscript*{N}}
-\newcommand*{\IT}{\textsubscript*{I}}
-\newcommand*{\GT}{\textsubscript*{G}}
-\newcommand*{\AT}{\textsubscript*{A}}
+\ProvideDocumentCommand \_ {} {\rule{\uscorewidth}{\uscorethickness}}
 
 %% Orthographic representation.
-\newcommand*{\orth}[1]{⟨#1⟩}
+\ProvideDocumentCommand \orth { m } {⟨#1⟩}
 
 %% Notes for later changes.
 %%
 %% FIXME: Detect whether font has U+27E6 & U+27E7, use them instead.
 \newlength{\dblbrackkern}
 \setlength{\dblbrackkern}{-0.325ex}
-\newcommand*{\dblbrackleft}{[\hspace{\dblbrackkern}[}
-\newcommand*{\dblbrackright}{]\hspace{\dblbrackkern}]}
-\newcommand{\FIXME}[1]{\mbox{\dblbrackleft}\textsc{Fixme}: #1\mbox{\dblbrackright}}
+\ProvideDocumentCommand \dblbrackleft {} {[\hspace{\dblbrackkern}[}
+\ProvideDocumentCommand \dblbrackright {} {]\hspace{\dblbrackkern}]}
+\ProvideDocumentCommand \FIXME { m }
+	{\mbox{\dblbrackleft}\textsc{Fixme}: #1\mbox{\dblbrackright}}
 
 %% A tilde.
 %\renewcommand*{\~}{\textasciitilde}
 %% For some reason the \textasciitilde macro has recently (circa
 %% February 2017) started producing U+02DC Small Tilde instead
 %% of U+007E Tilde. This forces the latter character.
-\renewcommand*{\~}{\char`~}
+\ProvideDocumentCommand \~ {} {\char`~}
 
 %% The little vP.
 \ProvideDocumentCommand \vv {} {\texorpdfstring{\emph{v}}{𝑣}}
