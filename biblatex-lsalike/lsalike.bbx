@@ -1,4 +1,4 @@
-\ProvidesFile{lsalike.bbx}[2016/03/29 v0.8i biblatex linguistic bibliographies]
+\ProvidesFile{lsalike.bbx}[2016/06/02 v0.8j biblatex linguistic bibliographies]
 
 % Changelog
 %
@@ -8,6 +8,7 @@
 % 0.8g 2015/09/28 - Fixed LingBuzz reference.
 % 0.8h 2016/03/22 - Fixed LingBuzz reference again.
 % 0.8i 2016/03/29 - Updated DeclareNameFormat to work with BibLaTeX 3.3.
+% 0.8j 2016/06/02 - Added support for ROA eprints.
 
 % This style will probably work with slightly older versions of BibLaTeX in
 % the 0.9 series, but it is best to assume version 1.0 which has been the
@@ -635,6 +636,19 @@
     {\href{http://elanguage.net/journals/bls/article/view/#1}{\nolinkurl{#1}}}
     {\nolinkurl{http://elanguage.net/journals/bls/article/view/#1}}}
 \DeclareFieldAlias{eprint:BLS}{eprint:bls}
+
+% Rutgers Optimality Archive
+\DeclareFieldFormat{eprint:roa}{%
+  \mkbibacro{ROA}\acronymcolon\space
+  \ifhyperref
+    {%
+        \iffieldundef{eprintclass}%
+        	{\nolinkurl{#1}}%
+        	{\href{http://roa.rutgers.edu/article/view/\thefield{eprintclass}}{\nolinkurl{#1}}}%
+    }%
+    {\nolinkurl{#1}}%
+}
+\DeclareFieldAlias{eprint:ROA}{eprint:roa}
 
 % Feel free to submit more online collection types for the eprint fields.
 % Even better, pester your favourite online collection to support DOI or
